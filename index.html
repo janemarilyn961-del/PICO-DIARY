@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>JENNIE*DIARY</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com/3.4.17"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
+<style>
+:root{--paper:#F7F6F0;--blush:#EAD8D9;--rose:#D56D7E;--berry:#9E133A;--ink:#3B1822;--matcha:#7E9D22}
+body{background:var(--paper) radial-gradient(var(--blush) 1.5px,transparent 1.5px) 0 0/18px 18px;color:var(--ink);font-family:'Zen Maru Gothic',system-ui,sans-serif}
+.px{font-family:Silkscreen,'Courier New',monospace;letter-spacing:.02em}
+[x-cloak]{display:none!important}
+.win{background:#fff;border:2px solid var(--berry);box-shadow:4px 4px 0 var(--berry)}
+.win.blush{background:var(--blush)}
+.bar{background:var(--rose);color:#fff;border-bottom:2px solid var(--berry);padding:2px 8px;display:flex;justify-content:space-between;align-items:center;font-size:12px}
+.dots{border-top:2px dotted var(--berry);margin:10px 0}
+.btn{font-family:Silkscreen,monospace;font-size:12px;border:2px solid var(--berry);background:#fff;color:var(--berry);padding:4px 10px;box-shadow:2px 2px 0 var(--berry);cursor:pointer}
+.btn:hover{transform:translate(1px,1px);box-shadow:1px 1px 0 var(--berry)}
+.btn.on,.btn.pri{background:var(--rose);color:#fff}
+.tag{font-family:Silkscreen,monospace;font-size:11px;background:#EEF3D6;color:var(--ink);border:1.5px solid var(--matcha);padding:0 6px;cursor:pointer}
+.mood{font-family:Silkscreen,monospace;font-size:11px;background:var(--matcha);color:#fff;padding:0 6px;border:1.5px solid #5d7517}
+.inp{width:100%;border:2px solid var(--berry);background:#fff;padding:5px 8px;color:var(--ink)}
+.pol{background:#fff;border:2px solid var(--berry);padding:6px 6px 22px;box-shadow:3px 3px 0 var(--blush);display:inline-block}
+.pol img{display:block;max-height:260px;max-width:100%}
+.spx{image-rendering:pixelated}
+:focus-visible{outline:3px solid var(--matcha);outline-offset:2px}
+.day{font-family:Silkscreen,monospace;font-size:11px;aspect-ratio:1;position:relative}
+.day.sel{background:var(--rose);color:#fff}
+.day i{position:absolute;bottom:2px;left:50%;width:4px;height:4px;margin-left:-2px;background:var(--matcha)}
+.chk{flex:none;width:18px;height:18px;border:2px solid var(--berry);background:#fff;box-shadow:2px 2px 0 var(--blush);cursor:pointer}
+.chk:hover{border-color:var(--rose)}
+.chk.on{background:var(--matcha) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 7 7' shape-rendering='crispEdges'%3E%3Cpath fill='white' d='M0 3h1v2H0zM1 4h1v2H1zM2 5h1v1H2zM3 4h1v1H3zM4 3h1v1H4zM5 2h1v1H5zM6 1h1v1H6z'/%3E%3C/svg%3E") center/11px no-repeat}
+.done{text-decoration:line-through;text-decoration-color:var(--rose);text-decoration-thickness:2px;opacity:.55}
+@media (prefers-reduced-motion:no-preference){.bob{animation:bob 2s steps(2) infinite}@keyframes bob{50%{transform:translateY(-3px)}}}
+</style>
+</head>
+<body x-data="diary()" x-init="init()" x-cloak class="min-h-screen">
+<div class="max-w-5xl mx-auto p-3 sm:p-5">
+
+<header class="text-center mb-4">
+  <h1 class="px text-3xl sm:text-4xl font-bold" style="color:var(--berry);text-shadow:3px 3px 0 var(--blush)">✿ JENNIE*DIARY ✿</h1>
+  <p class="px text-xs mt-1" style="color:var(--matcha)">~ my little corner of the internet ~</p>
+</header>
+
+<div class="grid lg:grid-cols-[270px_1fr] gap-4 items-start">
+
+<!-- SIDEBAR -->
+<aside class="space-y-4">
+  <section class="win">
+    <div class="bar px"><span>profile.exe</span><span>_ □ ×</span></div>
+    <div class="p-3 text-sm">
+      <div class="flex gap-3 items-center">
+        <div class="pol !p-1 bob"><img class="spx w-14 h-14" :src="sticker('b:blackcat')" alt="black cat face with yellow eyes"></div>
+        <input class="inp px !text-sm" x-model="profile.name" @change="saveProfile()" aria-label="Your name">
+      </div>
+      <div class="dots"></div>
+      <label class="px text-xs block">mood</label>
+      <div class="flex flex-wrap gap-1 mb-2">
+        <template x-for="m in moods" :key="m[0]"><button class="btn" :class="profile.mood===m[0]&&'on'" @click="profile.mood=m[0];saveProfile()" :title="m[0]" x-text="m[1]"></button></template>
+      </div>
+      <label class="px text-xs block">weather</label>
+      <div class="flex flex-wrap gap-1 mb-2">
+        <template x-for="w in weathers" :key="w"><button class="btn" :class="profile.weather===w&&'on'" @click="profile.weather=w;saveProfile()" x-text="w"></button></template>
+      </div>
+      <label class="px text-xs block" for="listen">♪ now listening / doing</label>
+      <input id="listen" class="inp" x-model="profile.listening" @change="saveProfile()">
+    </div>
+  </section>
+
+  <section class="win blush">
+    <div class="bar px"><button @click="shiftMonth(-1)" aria-label="Previous month">&lt;</button><span x-text="monthLabel"></span><button @click="shiftMonth(1)" aria-label="Next month">&gt;</button></div>
+    <div class="p-2 grid grid-cols-7 gap-1 text-center">
+      <template x-for="d in ['S','M','T','W','T','F','S']"><span class="px text-xs" x-text="d"></span></template>
+      <template x-for="(c,i) in cal" :key="i">
+        <button x-show="c" class="day bg-white border border-[#9E133A]" :class="fDate===c?.k&&'sel'" @click="fDate=(fDate===c.k?'':c.k);mode='feed'" x-text="c?.d"><i x-show="c?.has"></i></button>
+      </template>
+    </div>
+    <p class="px text-xs text-center pb-2" x-show="fDate" ><button class="underline" @click="fDate=''">clear date</button></p>
+  </section>
+
+  <section class="win" aria-label="Daily to-do">
+    <div class="bar px"><span>To-Do</span><span x-text="tdLabel"></span></div>
+    <div class="p-3">
+      <div class="flex gap-1 mb-2">
+        <input class="inp !py-1 text-sm" placeholder="add a tiny task…" maxlength="80" x-model="newTask" @keydown.enter="addTask()" aria-label="New task">
+        <button class="btn pri" @click="addTask()" aria-label="Add task">+</button>
+      </div>
+      <ul class="max-h-44 overflow-y-auto space-y-1.5 pr-1">
+        <template x-for="t in tdItems" :key="t.id">
+          <li class="flex items-start gap-2">
+            <button class="chk mt-0.5" :class="t.done&&'on'" role="checkbox" :aria-checked="t.done" :aria-label="t.text" @click="toggleTask(t.id)"></button>
+            <span class="flex-1 text-sm break-words leading-snug" :class="t.done&&'done'" x-text="t.text"></span>
+            <button class="px text-xs text-[#9E133A] px-1" @click="delTask(t.id)" aria-label="Delete task">×</button>
+          </li>
+        </template>
+      </ul>
+      <p x-show="!tdItems.length" class="px text-xs text-center py-2" style="color:var(--matcha)">nothing planned ♡</p>
+      <div x-show="overdue.items.length" class="dots"></div>
+      <button x-show="overdue.items.length" class="btn !text-[11px] w-full" @click="rollover()" x-text="'move unfinished to today ('+overdue.items.length+')'"></button>
+      <p x-show="overdue.items.length" class="text-xs text-center mt-1 opacity-70" x-text="'from '+(overdue.src===todayStr(1)?'yesterday':overdue.src)"></p>
+    </div>
+  </section>
+
+  <section class="win">
+    <div class="bar px"><span>tags</span></div>
+    <div class="p-3 flex flex-wrap gap-1">
+      <template x-for="t in tagList" :key="t[0]"><button class="tag" :class="fTag===t[0]&&'!bg-[#7E9D22] !text-white'" @click="fTag=(fTag===t[0]?'':t[0])" x-text="'#'+t[0]+' '+t[1]"></button></template>
+      <span x-show="!tagList.length" class="text-xs">no tags yet</span>
+    </div>
+  </section>
+
+  <section class="win">
+    <div class="bar px"><span>backup</span></div>
+    <div class="p-3 flex gap-2 flex-wrap">
+      <button class="btn" @click="exportJSON()">export</button>
+      <button class="btn" @click="$refs.rest.click()">restore</button>
+      <input type="file" accept="application/json" class="hidden" x-ref="rest" @change="restoreJSON($event)">
+    </div>
+  </section>
+</aside>
+
+<!-- MAIN -->
+<main class="space-y-4 min-w-0">
+  <section class="win">
+    <div class="p-3 flex flex-wrap gap-2 items-center">
+      <input class="inp !w-auto flex-1 min-w-[140px]" placeholder="search entries…" x-model="q" aria-label="Search entries">
+      <select class="inp !w-auto px text-xs" x-model="fMood" aria-label="Filter by mood">
+        <option value="">all moods</option>
+        <template x-for="m in moods" :key="m[0]"><option :value="m[0]" x-text="m[1]+' '+m[0]"></option></template>
+      </select>
+      <button class="btn" :class="mode==='feed'&&'on'" @click="mode='feed'">feed</button>
+      <button class="btn pri" @click="newEntry()">+ new entry</button>
+    </div>
+  </section>
+
+  <p x-show="!filtered.length" class="win p-6 text-center px text-sm">no entries here yet ♡ write one!</p>
+
+  <!-- FEED -->
+  <template x-if="mode==='feed'">
+    <div class="space-y-4">
+      <template x-for="e in filtered" :key="e.id">
+        <article class="win">
+          <div class="bar px"><span x-text="fmt(e.date)"></span><span x-text="e.weather"></span></div>
+          <div class="p-4">
+            <h2 class="text-xl font-bold"><button class="text-left hover:underline" @click="open(e.id)" x-text="e.title||'(untitled)'"></button></h2>
+            <div class="flex flex-wrap gap-1 my-2">
+              <span class="mood" x-text="moodIcon(e.mood)+' '+e.mood"></span>
+              <template x-for="t in e.tags"><button class="tag" @click="fTag=t" x-text="'#'+t"></button></template>
+            </div>
+            <p class="whitespace-pre-wrap leading-relaxed line-clamp-4" x-text="e.body"></p>
+            <div class="flex flex-wrap gap-3 mt-3 items-end">
+              <template x-for="(id,i) in e.imageIds.slice(0,2)" :key="id"><div class="pol" :style="rot(i)"><img :src="urls['i:'+id]" alt="" loading="lazy"></div></template>
+              <template x-for="(s,i) in e.stickers" :key="i"><img class="spx w-9 h-9" :style="rot(i)" :src="sticker(s)" alt="sticker"></template>
+            </div>
+          </div>
+        </article>
+      </template>
+    </div>
+  </template>
+
+  <!-- SINGLE -->
+  <template x-if="mode==='one'&&cur">
+    <article class="win">
+      <div class="bar px"><span x-text="fmt(cur.date)"></span><span x-text="cur.weather"></span></div>
+      <div class="p-4 sm:p-6">
+        <h2 class="text-2xl font-bold" x-text="cur.title||'(untitled)'"></h2>
+        <div class="flex flex-wrap gap-1 my-2">
+          <span class="mood" x-text="moodIcon(cur.mood)+' '+cur.mood"></span>
+          <template x-for="t in cur.tags"><span class="tag" x-text="'#'+t"></span></template>
+        </div>
+        <div class="dots"></div>
+        <p class="whitespace-pre-wrap leading-loose max-w-prose" x-text="cur.body"></p>
+        <div class="flex flex-wrap gap-5 my-5">
+          <template x-for="(id,i) in cur.imageIds" :key="id"><div class="pol" :style="rot(i)"><img :src="urls['i:'+id]" alt="journal photo"></div></template>
+        </div>
+        <div class="win blush p-2 flex flex-wrap gap-2 min-h-[50px]" x-show="cur.stickers.length">
+          <template x-for="(s,i) in cur.stickers" :key="i"><img class="spx w-12 h-12" :style="rot(i)" :src="sticker(s)" alt="sticker"></template>
+        </div>
+        <div class="dots"></div>
+        <div class="flex flex-wrap gap-2 justify-between">
+          <div class="flex gap-2"><button class="btn" @click="step(-1)">&lt; newer</button><button class="btn" @click="step(1)">older &gt;</button></div>
+          <div class="flex gap-2"><button class="btn" @click="edit(cur)">edit</button><button class="btn" :class="delArm&&'on'" @click="delArm?del(cur):askDel()" x-text="delArm?'really delete?':'delete'"></button><button class="btn pri" @click="mode='feed'">back</button></div>
+        </div>
+      </div>
+    </article>
+  </template>
+</main>
+</div>
+
+<footer class="px text-xs text-center mt-8 pb-4" style="color:var(--berry)">♡ saved on this device with IndexedDB ♡</footer>
+
+<div x-show="toast" class="px text-xs fixed bottom-4 left-1/2 -translate-x-1/2 z-30 win p-2" role="status" x-text="toast"></div>
+<!-- EDITOR -->
+<div x-show="ed" class="fixed inset-0 bg-[#3B1822]/50 z-20 overflow-y-auto p-3" @keydown.escape.window="cancel()">
+  <div class="win max-w-2xl mx-auto my-4" x-show="ed" role="dialog" aria-label="Entry editor">
+    <div class="bar px"><span x-text="ed?.id?'edit entry':'new entry'"></span><button @click="cancel()" aria-label="Close">×</button></div>
+    <template x-if="ed"><div class="p-4 space-y-3">
+      <div class="grid sm:grid-cols-[1fr_150px] gap-2">
+        <input class="inp text-lg font-bold" placeholder="title" x-model="ed.title" aria-label="Title">
+        <input type="date" class="inp" x-model="ed.date" aria-label="Date">
+      </div>
+      <div class="flex flex-wrap gap-1 items-center"><span class="px text-xs w-14">mood</span>
+        <template x-for="m in moods" :key="m[0]"><button class="btn" :class="ed.mood===m[0]&&'on'" @click="ed.mood=m[0]" x-text="m[1]+' '+m[0]"></button></template></div>
+      <div class="flex flex-wrap gap-1 items-center"><span class="px text-xs w-14">weather</span>
+        <template x-for="w in weathers" :key="w"><button class="btn" :class="ed.weather===w&&'on'" @click="ed.weather=w" x-text="w"></button></template></div>
+      <input class="inp" placeholder="tags, separated by commas" x-model="ed.tags" aria-label="Tags">
+      <textarea class="inp leading-relaxed" rows="9" placeholder="dear diary…" x-model="ed.body" aria-label="Entry text"></textarea>
+
+      <div>
+        <div class="flex flex-wrap gap-2 items-center">
+          <button class="btn" @click="$refs.img.click()">+ photo / gif</button>
+          <button class="btn" @click="picker=!picker" :class="picker&&'on'">stickers</button>
+          <input type="file" class="hidden" accept="image/*" multiple x-ref="img" @change="addImages($event)">
+        </div>
+        <div class="flex flex-wrap gap-3 mt-3">
+          <template x-for="(id,i) in ed.imageIds" :key="id"><div class="pol" :style="rot(i)"><img class="!max-h-24" :src="urls['i:'+id]" alt=""><button class="px text-xs absolute" style="margin-top:2px" @click="rmImage(id)">remove</button></div></template>
+        </div>
+        <div x-show="picker" class="win blush p-2 mt-3">
+          <p class="px text-xs mb-1">tap to add · tap an added one to remove</p>
+          <div class="flex flex-wrap gap-2">
+            <template x-for="s in allStickers" :key="s"><button class="bg-white border-2 border-[#9E133A] p-1" @click="ed.stickers.push(s)" :aria-label="'add sticker '+s"><img class="spx w-8 h-8" :src="sticker(s)" alt=""></button></template>
+            <button class="btn" @click="$refs.stk.click()">+ my own</button>
+            <input type="file" class="hidden" accept="image/*" x-ref="stk" @change="addSticker($event)">
+          </div>
+          <div class="dots"></div>
+          <div class="flex flex-wrap gap-1 min-h-[36px]">
+            <template x-for="(s,i) in ed.stickers" :key="i"><button @click="ed.stickers.splice(i,1)" aria-label="remove sticker"><img class="spx w-9 h-9" :src="sticker(s)" alt=""></button></template>
+          </div>
+        </div>
+      </div>
+      <div class="dots"></div>
+      <div class="flex justify-end gap-2"><button class="btn" @click="cancel()">cancel</button><button class="btn pri" @click="save()">save entry</button></div>
+    </div></template>
+  </div>
+</div>
+</div>
+
+<script>
+/* ---------- IndexedDB: db "picoDiary", 4 stores (see notes in chat) ---------- */
+let db;
+const STORES=['entries','images','stickers','meta','todos'];
+const openDB=()=>new Promise((ok,no)=>{const r=indexedDB.open('picoDiary',2);
+  r.onupgradeneeded=()=>{const d=r.result,has=n=>d.objectStoreNames.contains(n);
+    if(!has('entries'))d.createObjectStore('entries',{keyPath:'id'}).createIndex('date','date');
+    if(!has('images'))d.createObjectStore('images',{keyPath:'id'});
+    if(!has('stickers'))d.createObjectStore('stickers',{keyPath:'id'});
+    if(!has('meta'))d.createObjectStore('meta',{keyPath:'key'});
+    if(!has('todos'))d.createObjectStore('todos',{keyPath:'date'});};
+  r.onsuccess=()=>ok(r.result);r.onerror=()=>no(r.error)});
+const run=(s,mode,fn)=>new Promise((ok,no)=>{const t=db.transaction(s,mode);const rq=fn(t.objectStore(s));t.oncomplete=()=>ok(rq&&rq.result);t.onerror=()=>no(t.error)});
+const all=s=>run(s,'readonly',o=>o.getAll());
+const put=(s,v)=>run(s,'readwrite',o=>o.put(v));
+const rm=(s,k)=>run(s,'readwrite',o=>o.delete(k));
+const clr=s=>run(s,'readwrite',o=>o.clear());
+const uid=()=>crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(16).slice(2);
+const b2d=b=>new Promise(r=>{const f=new FileReader();f.onload=()=>r(f.result);f.readAsDataURL(b)});
+const d2b=d=>fetch(d).then(r=>r.blob());
+
+/* ---------- pixel stickers: 8x8 grids ---------- */
+const PAL={r:'#D56D7E',b:'#9E133A',g:'#7E9D22',y:'#F2C94C',w:'#FFFFFF',k:'#3B1822',p:'#EAD8D9',o:'#E9A66B',K:'#1E1519',n:'#F7A8B8'};
+const ART={
+ blackcat:['.KK......KK.','.KKK....KKK.','.KKKKKKKKKK.','KKKKKKKKKKKK','KKyyKKKKyyKK','KKyyKKKKyyKK','KKKKKnnKKKKK','KKKKnKKnKKKK','.KKKKKKKKKK.'],
+ heart:['.rr..rr.','rrrrrrrr','rwrrrrrr','rrrrrrrr','.rrrrrr.','..rrrr..','...rr...','........'],
+ star:['...yy...','...yy...','yyyyyyyy','.yyyyyy.','..yyyy..','..yy.yy.','.yy...yy','........'],
+ cat:['o......o','oo....oo','oooooooo','okooooko','oooppooo','oooooooo','.oooooo.','........'],
+ matcha:['........','bbbbbb..','bggggbbb','bggggb.b','bggggbbb','.bbbbb..','........','........'],
+ sparkle:['...y....','..yyy...','yyywyyy.','..yyy...','...y..y.','......y.','.....yyy','......y.'],
+ flower:['..r..r..','.rrrrrr.','rrryyrrr','rrryyrrr','.rrrrrr.','...gg...','..g.g...','........']};
+const svgURI=rows=>{let s='';rows.forEach((row,y)=>[...row].forEach((c,x)=>{if(PAL[c])s+=`<rect x="${x}" y="${y}" width="1" height="1" fill="${PAL[c]}"/>`}));
+  return 'data:image/svg+xml,'+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${rows[0].length} ${rows.length}" shape-rendering="crispEdges">${s}</svg>`)};
+const BUILTIN=Object.fromEntries(Object.entries(ART).map(([k,v])=>[k,svgURI(v)]));
+
+const resize=(file,max,type)=>file.type==='image/gif'||!file.type.startsWith('image/')?Promise.resolve(file):
+  createImageBitmap(file).then(bm=>{const s=Math.min(1,max/Math.max(bm.width,bm.height));const c=document.createElement('canvas');
+    c.width=Math.max(1,bm.width*s|0);c.height=Math.max(1,bm.height*s|0);c.getContext('2d').drawImage(bm,0,0,c.width,c.height);
+    return new Promise(r=>c.toBlob(r,type,.82))});
+
+const todayStr=(off=0)=>{const d=new Date();d.setDate(d.getDate()-off);return new Date(d-d.getTimezoneOffset()*6e4).toISOString().slice(0,10)};
+
+function diary(){return{
+ entries:[],urls:{},customStickers:[],profile:{key:'profile',name:'pico-chan',mood:'cozy',weather:'🌸',listening:'lo-fi beats & matcha latte'},
+ moods:[['happy','😊'],['cozy','☕'],['sleepy','😴'],['excited','🤩'],['sad','😢'],['tired','🥱']],
+ weathers:['☀️','⛅','☁️','🌧️','❄️','🌸'],
+ todos:{},newTask:'',delArm:false,toast:'',q:'',fTag:'',fMood:'',fDate:'',mode:'feed',curId:null,ed:null,picker:false,added:[],removed:[],
+ cy:new Date().getFullYear(),cm:new Date().getMonth(),
+
+ async init(){for(const k of ['q','fTag','fMood','fDate'])this.$watch(k,()=>{this.mode='feed';this.delArm=false});
+  db=await openDB();
+  const p=await run('meta','readonly',o=>o.get('profile'));if(p)this.profile=p;
+  if(!(await run('meta','readonly',o=>o.get('seeded')))){await this.seed();await put('meta',{key:'seeded',v:1});}
+  await this.reload();},
+ async seed(){const S=[
+  {title:'first day of my pixel diary ♡',date:todayStr(0),mood:'happy',weather:'🌸',tags:['hello','cozy'],stickers:['b:heart','b:sparkle','b:cat'],
+   body:'Today I made myself a tiny corner of the internet.\n\nTry the buttons: add a photo, pick some stickers, or search by tag. Everything lives on this device, so nobody else can read it unless you export it!'},
+  {title:'rainy cafe afternoon',date:todayStr(1),mood:'cozy',weather:'🌧️',tags:['cafe','matcha'],stickers:['b:matcha','b:flower'],
+   body:'Matcha latte, a window seat, and the sound of rain on the glass. I brought a book but mostly just watched the street.\n\nNote to self: bring the little notebook next time.'},
+  {title:'cat photoshoot (failed)',date:todayStr(3),mood:'sleepy',weather:'☁️',tags:['cat','weekend'],stickers:['b:cat','b:star'],
+   body:'Tried to take a nice photo of the cat. She moved every single time. 12 blurry tails, 0 good pictures.'}];
+  for(const s of S)await put('entries',{...s,id:uid(),imageIds:[],createdAt:Date.now(),updatedAt:Date.now()});
+  const tk=(text,done)=>({id:uid(),text,done});
+  await put('todos',{date:todayStr(0),items:[tk('water the plants',false),tk('reply to mom',true),tk('buy matcha powder',false)]});
+  await put('todos',{date:todayStr(1),items:[tk('write in my diary',true),tk('return library book',false),tk('stretch 10 min',false)]});},
+ async reload(){this.entries=await all('entries');
+  this.customStickers=await all('stickers');
+  const T={};for(const t of await all('todos'))T[t.date]=t.items;this.todos=T;
+  for(const r of [...await all('images')].map(x=>['i:',x]).concat(this.customStickers.map(x=>['s:',x])))
+   if(!this.urls[r[0]+r[1].id])this.urls[r[0]+r[1].id]=await b2d(r[1].blob);},
+
+ /* to-do (store 'todos': one record per day, keyed by YYYY-MM-DD) */
+ get tdDate(){return this.fDate||todayStr(0)},
+ get tdLabel(){return this.tdDate===todayStr(0)?'Today':this.tdDate},
+ get tdItems(){return this.todos[this.tdDate]||[]},
+ get overdue(){const t=todayStr(0);if(this.tdDate>t)return{src:'',items:[]};
+  const src=this.tdDate<t?this.tdDate:todayStr(1);return{src,items:(this.todos[src]||[]).filter(x=>!x.done)}},
+ async saveTodos(date,items){const plain=JSON.parse(JSON.stringify(items));
+  if(plain.length)await put('todos',{date,items:plain});else await rm('todos',date);
+  this.todos={...this.todos,[date]:plain}},
+ async addTask(){const t=this.newTask.trim();if(!t)return;this.newTask='';await this.saveTodos(this.tdDate,[...this.tdItems,{id:uid(),text:t,done:false}])},
+ toggleTask(id){return this.saveTodos(this.tdDate,this.tdItems.map(x=>x.id===id?{...x,done:!x.done}:x))},
+ delTask(id){return this.saveTodos(this.tdDate,this.tdItems.filter(x=>x.id!==id))},
+ async rollover(){const{src,items}=this.overdue;if(!items.length)return;const t=todayStr(0);
+  await this.saveTodos(t,[...(this.todos[t]||[]),...items]);
+  await this.saveTodos(src,(this.todos[src]||[]).filter(x=>x.done));
+  this.say(`Moved ${items.length} task${items.length>1?'s':''} to today ♡`)},
+
+ /* helpers */
+ sticker(id){return id.startsWith('b:')?BUILTIN[id.slice(2)]:(this.urls['s:'+id.slice(2)]||'')},
+ get allStickers(){return Object.keys(BUILTIN).map(k=>'b:'+k).concat(this.customStickers.map(s=>'c:'+s.id))},
+ moodIcon(m){return (this.moods.find(x=>x[0]===m)||['','•'])[1]},
+ fmt(d){const t=new Date(d+'T00:00');return d.replace(/-/g,'.')+' ('+['Sun','Mon','Tue','Wed','Thu','Fri','Sat'][t.getDay()]+')'},
+ rot(i){return `transform:rotate(${[-2,1.5,-1,2.5][i%4]}deg)`},
+ get cur(){return this.entries.find(e=>e.id===this.curId)},
+ get filtered(){const q=this.q.toLowerCase().trim();
+  return this.entries.filter(e=>(!this.fTag||e.tags.includes(this.fTag))&&(!this.fMood||e.mood===this.fMood)&&(!this.fDate||e.date===this.fDate)
+   &&(!q||(e.title+' '+e.body+' '+e.tags.join(' ')).toLowerCase().includes(q)))
+   .sort((a,b)=>b.date.localeCompare(a.date)||b.createdAt-a.createdAt)},
+ get tagList(){const m={};this.entries.forEach(e=>e.tags.forEach(t=>m[t]=(m[t]||0)+1));return Object.entries(m).sort((a,b)=>b[1]-a[1])},
+ get monthLabel(){return new Date(this.cy,this.cm).toLocaleString('en',{month:'short',year:'numeric'}).toLowerCase()},
+ shiftMonth(n){const d=new Date(this.cy,this.cm+n);this.cy=d.getFullYear();this.cm=d.getMonth()},
+ get cal(){const out=[],f=new Date(this.cy,this.cm,1).getDay(),n=new Date(this.cy,this.cm+1,0).getDate();
+  for(let i=0;i<f;i++)out.push(null);
+  for(let d=1;d<=n;d++){const k=`${this.cy}-${String(this.cm+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;out.push({d,k,has:this.entries.some(e=>e.date===k)})}
+  return out},
+ saveProfile(){put('meta',JSON.parse(JSON.stringify(this.profile)))},
+ open(id){this.delArm=false;this.curId=id;this.mode='one';scrollTo(0,0)},
+ step(n){const l=this.filtered,i=l.findIndex(e=>e.id===this.curId),j=i+n;if(l[j]){this.curId=l[j].id;this.delArm=false}},
+
+ /* editor */
+ newEntry(){this.added=[];this.removed=[];this.picker=false;
+  this.ed={title:'',date:todayStr(0),mood:this.profile.mood,weather:this.profile.weather,tags:'',body:'',imageIds:[],stickers:[]}},
+ edit(e){this.added=[];this.removed=[];this.picker=false;this.ed={...e,tags:e.tags.join(', '),imageIds:[...e.imageIds],stickers:[...e.stickers]}},
+ async cancel(){for(const id of this.added)await rm('images',id);this.ed=null},
+ async addImages(ev){for(const f of ev.target.files){const b=await resize(f,1280,'image/jpeg');const id=uid();
+   await put('images',{id,blob:b,name:f.name,type:b.type,addedAt:Date.now()});this.urls['i:'+id]=await b2d(b);this.ed.imageIds.push(id);this.added.push(id)}ev.target.value=''},
+ rmImage(id){this.ed.imageIds=this.ed.imageIds.filter(x=>x!==id);if(this.added.includes(id)){rm('images',id);this.added=this.added.filter(x=>x!==id)}else this.removed.push(id)},
+ async addSticker(ev){for(const f of ev.target.files){const b=await resize(f,96,'image/png');await put('stickers',{id:uid(),blob:b,name:f.name,type:b.type})}ev.target.value='';await this.reload()},
+ async save(){const e=this.ed,old=e.id?this.entries.find(x=>x.id===e.id):null;
+  const rec=JSON.parse(JSON.stringify({...e,id:e.id||uid(),title:e.title.trim(),createdAt:old?.createdAt||Date.now(),updatedAt:Date.now(),
+   tags:[...new Set(e.tags.split(/[,、\s]+/).map(t=>t.replace(/^#/,'').toLowerCase()).filter(Boolean))]}));
+  await put('entries',rec);for(const id of this.removed)await rm('images',id);
+  this.ed=null;await this.reload();if(this.mode==='one')this.curId=rec.id},
+ askDel(){this.delArm=true;setTimeout(()=>this.delArm=false,4000)},
+ say(m){this.toast=m;setTimeout(()=>this.toast='',3000)},
+ async del(e){const ids=[...e.imageIds],id=e.id;this.delArm=false;
+  for(const i of ids)await rm('images',i);await rm('entries',id);this.mode='feed';this.curId=null;await this.reload();this.say('Entry deleted')},
+
+ /* backup */
+ async exportJSON(){const data={app:'picoDiary',version:1,exportedAt:new Date().toISOString()};
+  for(const s of STORES){data[s]=await Promise.all((await all(s)).map(async r=>r.blob?{...r,blob:await b2d(r.blob)}:r))}
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data)],{type:'application/json'}));
+  a.download=`jennie-diary-${todayStr(0)}.json`;a.click()},
+ async restoreJSON(ev){const f=ev.target.files[0];ev.target.value='';if(!f)return;
+  try{const data=JSON.parse(await f.text());if(data.app!=='picoDiary')throw 0;
+   for(const s of STORES){if(!data[s])continue;await clr(s);for(const r of data[s]||[])await put(s,r.blob?{...r,blob:await d2b(r.blob)}:r)}
+   this.urls={};const p=await run('meta','readonly',o=>o.get('profile'));if(p)this.profile=p;await this.reload();this.mode='feed';this.say('Restored ♡ (previous data replaced)')}
+  catch(e){this.say('That file is not a JENNIE*DIARY backup.')}}
+}}
+</script>
+</body>
+</html>
